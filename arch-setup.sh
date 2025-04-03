@@ -163,7 +163,6 @@ PACMAN_TOOLS=(
 # AUR tools
 AUR_TOOLS=(
     "evil-winrm"
-    "impacket"
     "rdp-sec-check"
     "seclists"
 )
@@ -207,6 +206,30 @@ for tool in "${AUR_TOOLS[@]}"; do
         fi
     fi
 done
+
+# Install pipx if not already installed
+if ! command_exists pipx; then
+    print_status "Installing pipx..."
+    pacman -S --needed --noconfirm python-pipx
+    print_good "pipx installed successfully"
+else
+    print_good "pipx already installed"
+fi
+
+# Install impacket using pipx
+print_status "Installing impacket using pipx..."
+if sudo -u $USERNAME python -m pipx install impacket 2>/dev/null; then
+    print_good "impacket installed successfully with pipx"
+    
+    # Ensure pipx bin directory is in PATH
+    sudo -u $USERNAME bash -c "pipx ensurepath"
+    print_status "Added pipx bin directory to PATH"
+    
+    # Update current PATH for this session
+    export PATH="$USER_HOME/.local/bin:$PATH"
+else
+    print_error "Failed to install impacket with pipx"
+fi
 
 # Create directory structure for tools and CTFs
 print_status "Creating CTF directory structure..."
@@ -401,6 +424,9 @@ cat > $USER_HOME/.zsh_pentest << 'EOL'
 alias nmap-full="sudo nmap -sC -sV -p-"
 alias nmap-quick="sudo nmap -sC -sV --top-ports 1000"
 
+# Impacket aliases
+
+
 # Tool path aliases
 alias enum4linux-ng="~/ctf/tools/enum4linux-ng/run-enum4linux-ng.sh"
 alias dnsenum="~/ctf/tools/dnsenum/run-dnsenum.sh"
@@ -474,6 +500,7 @@ if [ ! -d "$USER_HOME/.oh-my-zsh" ]; then
 else
     print_good "Oh My Zsh already installed"
 fi
+
 
 print_good "Installation complete!"
 print_status "Recommended next steps:"
