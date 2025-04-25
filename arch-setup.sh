@@ -151,6 +151,7 @@ PACMAN_TOOLS=(
     "lftp"        # FTP client (replaces 'ftp')
     "openssh"
     "rsync"
+    "nfs-utils"
     
     # Database tools
     "sqlmap"
