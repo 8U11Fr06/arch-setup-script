@@ -133,10 +133,16 @@ PACMAN_TOOLS=(
     "netcat"      # GNU netcat
     "bind-tools"  # For dig command
     "whois"
+    "rdp-sec-check"
+    "seclists"
+    "dnsenum"
+    "onesixtyone"
+    "enum4linux-ng"
     
     # Web tools
     "whatweb"
     "gobuster"
+    "eyewitness"
     
     # Exploitation
     "metasploit"
@@ -152,6 +158,8 @@ PACMAN_TOOLS=(
     "openssh"
     "rsync"
     "nfs-utils"
+    "ssh-audit"
+    "net-snmp"
     
     # Database tools
     "sqlmap"
@@ -164,14 +172,8 @@ PACMAN_TOOLS=(
 # AUR tools
 AUR_TOOLS=(
     "evil-winrm"
-    "rdp-sec-check"
-    "seclists"
 )
 
-# GitHub tools to download manually
-GITHUB_TOOLS=(
-    "https://github.com/maaaaz/impacket-examples-windows.git" # ODAT alternative
-)
 
 # Install pacman tools
 print_status "Installing tools from official and BlackArch repositories..."
@@ -237,40 +239,6 @@ print_status "Creating CTF directory structure..."
 mkdir -p $USER_HOME/ctf/{tools,wordlists,challenges,notes}
 chown -R $USERNAME:$USERNAME $USER_HOME/ctf
 
-# ODAT Tools (Oracle Database Attack Tool)
-print_status "Installing ODAT from GitHub..."
-clone_or_update_repo "https://github.com/quentinhardy/odat.git" "$USER_HOME/ctf/tools/odat"
-
-# Install ODAT requirements if possible
-if [ -f "$USER_HOME/ctf/tools/odat/requirements.txt" ]; then
-    print_status "Setting up venv for ODAT..."
-    sudo -u $USERNAME bash -c "cd $USER_HOME/ctf/tools/odat && \
-        python -m venv venv && \
-        source venv/bin/activate && \
-        pip install -r requirements.txt && \
-        deactivate"
-    
-    # Create a wrapper script to run ODAT with the virtual environment
-    cat > "$USER_HOME/ctf/tools/odat/run-odat.sh" << 'EOF'
-#!/bin/bash
-DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-source "$DIR/venv/bin/activate"
-python "$DIR/odat.py" "$@"
-deactivate
-EOF
-    chmod +x "$USER_HOME/ctf/tools/odat/run-odat.sh"
-    chown $USERNAME:$USERNAME "$USER_HOME/ctf/tools/odat/run-odat.sh"
-fi
-
-# Add Oracle client if needed
-print_status "Checking for Oracle client..."
-if ! command_exists sqlplus; then
-    print_status "Installing Oracle client (if available)..."
-    sudo -u $USERNAME yay -S --noconfirm oracle-instantclient-sqlplus 2>/dev/null || \
-    print_warning "Oracle client not found in AUR. Manual installation may be required."
-else
-    print_good "Oracle client (sqlplus) already installed"
-fi
 
 # Clone GitHub tools
 print_status "Installing GitHub tools..."
@@ -292,14 +260,6 @@ clone_or_update_repo() {
     chown -R $USERNAME:$USERNAME "$target_dir"
 }
 
-# enum4linux-ng
-clone_or_update_repo "https://github.com/cddmp/enum4linux-ng.git" "$USER_HOME/ctf/tools/enum4linux-ng"
-
-# dnsenum
-clone_or_update_repo "https://github.com/fwaeytens/dnsenum.git" "$USER_HOME/ctf/tools/dnsenum"
-
-# EyeWitness
-clone_or_update_repo "https://github.com/RedSiege/EyeWitness.git" "$USER_HOME/ctf/tools/EyeWitness"
 
 # Install Python requirements for GitHub tools using virtual environments
 print_status "Installing Python virtual environments for GitHub tools..."
@@ -307,73 +267,6 @@ print_status "Installing Python virtual environments for GitHub tools..."
 # Python venv is included in the base python package in Arch Linux
 # No need to install python-venv separately
 
-# Setup virtual environment for enum4linux-ng
-if [ -f "$USER_HOME/ctf/tools/enum4linux-ng/requirements.txt" ]; then
-    print_status "Setting up venv for enum4linux-ng..."
-    sudo -u $USERNAME bash -c "cd $USER_HOME/ctf/tools/enum4linux-ng && \
-        python -m venv venv && \
-        source venv/bin/activate && \
-        pip install -r requirements.txt && \
-        deactivate"
-    
-    # Create a wrapper script to run enum4linux-ng with the virtual environment
-    cat > "$USER_HOME/ctf/tools/enum4linux-ng/run-enum4linux-ng.sh" << 'EOF'
-#!/bin/bash
-DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-source "$DIR/venv/bin/activate"
-python "$DIR/enum4linux-ng.py" "$@"
-deactivate
-EOF
-    chmod +x "$USER_HOME/ctf/tools/enum4linux-ng/run-enum4linux-ng.sh"
-    chown $USERNAME:$USERNAME "$USER_HOME/ctf/tools/enum4linux-ng/run-enum4linux-ng.sh"
-fi
-
-# Setup virtual environment for dnsenum
-if [ -f "$USER_HOME/ctf/tools/dnsenum/requirements.txt" ]; then
-    print_status "Setting up venv for dnsenum..."
-    sudo -u $USERNAME bash -c "cd $USER_HOME/ctf/tools/dnsenum && \
-        python -m venv venv && \
-        source venv/bin/activate && \
-        pip install -r requirements.txt && \
-        deactivate"
-    
-    # Create a wrapper script to run dnsenum with the virtual environment
-    cat > "$USER_HOME/ctf/tools/dnsenum/run-dnsenum.sh" << 'EOF'
-#!/bin/bash
-DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-source "$DIR/venv/bin/activate"
-perl "$DIR/dnsenum.pl" "$@"
-deactivate
-EOF
-    chmod +x "$USER_HOME/ctf/tools/dnsenum/run-dnsenum.sh"
-    chown $USERNAME:$USERNAME "$USER_HOME/ctf/tools/dnsenum/run-dnsenum.sh"
-fi
-
-# Setup virtual environment for EyeWitness
-if [ -f "$USER_HOME/ctf/tools/EyeWitness/Python/requirements.txt" ]; then
-    print_status "Setting up venv for EyeWitness..."
-    sudo -u $USERNAME bash -c "cd $USER_HOME/ctf/tools/EyeWitness/Python && \
-        python -m venv venv && \
-        source venv/bin/activate && \
-        pip install -r requirements.txt && \
-        deactivate"
-    
-    # Create a wrapper script to run EyeWitness with the virtual environment
-    cat > "$USER_HOME/ctf/tools/EyeWitness/Python/run-eyewitness.sh" << 'EOF'
-#!/bin/bash
-DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-source "$DIR/venv/bin/activate"
-python "$DIR/EyeWitness.py" "$@"
-deactivate
-EOF
-    chmod +x "$USER_HOME/ctf/tools/EyeWitness/Python/run-eyewitness.sh"
-    chown $USERNAME:$USERNAME "$USER_HOME/ctf/tools/EyeWitness/Python/run-eyewitness.sh"
-fi
-
-# Make tools executable
-chmod +x "$USER_HOME/ctf/tools/enum4linux-ng/enum4linux-ng.py"
-chmod +x "$USER_HOME/ctf/tools/dnsenum/dnsenum.pl"
-chmod +x "$USER_HOME/ctf/tools/EyeWitness/Python/EyeWitness.py"
 
 # Additional recommended tools
 print_status "Installing additional recommended tools..."
@@ -418,45 +311,6 @@ for tool in "${RECOMMENDED_TOOLS[@]}"; do
     fi
 done
 
-# Set up aliases and environment
-print_status "Setting up aliases and environment..."
-cat > $USER_HOME/.zsh_pentest << 'EOL'
-# Pentest/CTF aliases and functions
-alias nmap-full="sudo nmap -sC -sV -p-"
-alias nmap-quick="sudo nmap -sC -sV --top-ports 1000"
-
-# Impacket aliases
-
-
-# Tool path aliases
-alias enum4linux-ng="~/ctf/tools/enum4linux-ng/run-enum4linux-ng.sh"
-alias dnsenum="~/ctf/tools/dnsenum/run-dnsenum.sh"
-alias eyewitness="~/ctf/tools/EyeWitness/Python/run-eyewitness.sh"
-alias odat="~/ctf/tools/odat/run-odat.sh"
-
-# Add ctf tools to path
-export PATH=$PATH:$HOME/ctf/tools
-export PATH=$PATH:$HOME/ctf/tools/enum4linux-ng
-export PATH=$PATH:$HOME/ctf/tools/dnsenum
-export PATH=$PATH:$HOME/ctf/tools/EyeWitness/Python
-
-# Environment variables
-export WORDLISTS=/usr/share/wordlists
-
-# Function to quickly create a new CTF workspace
-function newctf() {
-    if [ -z "$1" ]; then
-        echo "Usage: newctf <ctf_name>"
-        return 1
-    fi
-    
-    local ctf_dir="$HOME/ctf/challenges/$1"
-    mkdir -p "$ctf_dir"/{recon,exploit,loot,notes}
-    echo "# $1 CTF Notes" > "$ctf_dir/notes/README.md"
-    echo "Created CTF workspace at $ctf_dir"
-    cd "$ctf_dir"
-}
-EOL
 
 # Install Go and CF-Hero
 print_status "Installing Go and CF-Hero..."
@@ -481,17 +335,9 @@ if ! grep -q "export GOPATH=\$HOME/go" "/home/faraday/.zshrc"; then
     echo "export PATH=\$PATH:\$GOPATH/bin" >> /home/faraday/.zshrc
 fi
 
-
-# Add source to .zshrc if not already there
-if ! grep -q "source ~/.zsh_pentest" "$USER_HOME/.zshrc" 2>/dev/null; then
-    echo "source ~/.zsh_pentest" >> "$USER_HOME/.zshrc"
-fi
-
 # Set proper ownership
-chown $USERNAME:$USERNAME $USER_HOME/.zsh_pentest
-if [ -f "$USER_HOME/.zshrc" ]; then
-    chown $USERNAME:$USERNAME $USER_HOME/.zshrc
-fi
+chown $USERNAME:$USERNAME $USER_HOME/.zshrc
+
 
 # Install Oh My Zsh for a better terminal experience (optional)
 print_status "Installing Oh My Zsh for better terminal experience..."
